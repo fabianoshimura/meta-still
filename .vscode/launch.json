@@ -2,7 +2,16 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "meta-still (full pipeline)",
+      "name": "meta-still (window)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "meta_still.ui",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false
+    },
+    {
+      "name": "meta-still (full pipeline, terminal)",
       "type": "debugpy",
       "request": "launch",
       "module": "meta_still",
@@ -24,6 +33,15 @@
       "type": "debugpy",
       "request": "launch",
       "module": "meta_still.stills",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false
+    },
+    {
+      "name": "Contact sheet (rebuild from output folder)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "meta_still.contactsheet",
       "console": "integratedTerminal",
       "cwd": "${workspaceFolder}",
       "justMyCode": false

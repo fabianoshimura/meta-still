@@ -48,6 +48,8 @@ class ClipOutcome:
 class IngestResult:
     map_path: Path
     outcomes: list[ClipOutcome] = field(default_factory=list)
+    stopped: bool = False
+    total_clips: int = 0
 
     @property
     def done(self) -> list[ClipOutcome]:
@@ -68,6 +70,10 @@ class IngestFolder:
     stills: GenerateStills
     progress: Callable[[str], None] = lambda _message: None
     timer: Callable[[], float] = time.monotonic
+    # A GUI needs two things a CLI does not: a number to draw a bar with, and
+    # a way to stop a 25-minute run without killing the process.
+    on_step: Callable[[int, int], None] = lambda _done, _total: None
+    should_stop: Callable[[], bool] = lambda: False
 
     def execute(self, request: IngestRequest) -> IngestResult:
         report = self.scan.execute(request.root)
@@ -85,11 +91,26 @@ class IngestFolder:
         self.progress(f"{len(videos)} video files to process")
 
         plan = plan_destinations(videos, request.output_dir)
-        outcomes = [
-            self._process(request, position, len(plan), clip)
-            for position, clip in enumerate(plan, start=1)
-        ]
-        return IngestResult(map_path=map_path, outcomes=outcomes)
+        outcomes: list[ClipOutcome] = []
+        stopped = False
+
+        for position, clip in enumerate(plan, start=1):
+            # Checked between clips, never mid-clip: interrupting a decode
+            # would leave a half-written PNG that the resume check would then
+            # count as done.
+            if self.should_stop():
+                stopped = True
+                self.progress(f"Stopped after {len(outcomes)} of {len(plan)} clips.")
+                break
+            outcomes.append(self._process(request, position, len(plan), clip))
+            self.on_step(position, len(plan))
+
+        return IngestResult(
+            map_path=map_path,
+            outcomes=outcomes,
+            stopped=stopped,
+            total_clips=len(plan),
+        )
 
     def _process(
         self,

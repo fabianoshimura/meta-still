@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from meta_still.contactsheet.interfaces.cli import build as build_sheet
 from meta_still.core.interfaces.prompt import ask
 from meta_still.mapper.application.scan_folder import ScanFolder
 from meta_still.mapper.infrastructure.os_filesystem import OsFileSystem
@@ -38,6 +39,11 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Redo clips whose thumbnails already exist",
     )
+    parser.add_argument(
+        "--no-sheet",
+        action="store_true",
+        help="Skip building the HTML contact sheet at the end",
+    )
     args = parser.parse_args(argv)
 
     input_path = args.path or ask("Path to the folder to ingest")
@@ -70,6 +76,11 @@ def main(argv: list[str] | None = None) -> int:
         )
     )
 
+    sheet_path = None
+    if not args.no_sheet:
+        print()
+        sheet_path = build_sheet(output_dir, progress=print)
+
     total_seconds = sum(o.seconds for o in result.outcomes)
     print()
     print(f"Done in {total_seconds / 60:.1f} min - {output_dir.resolve()}")
@@ -79,6 +90,10 @@ def main(argv: list[str] | None = None) -> int:
 
     for outcome in result.failures:
         print(f"    {outcome.source.name}: {outcome.error}")
+
+    if sheet_path:
+        print()
+        print(f"Contact sheet: {sheet_path.resolve()}")
 
     # A run that finished is a success even if some clips were unreadable -
     # those are reported above. Only a run where nothing at all came through
