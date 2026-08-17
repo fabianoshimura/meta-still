@@ -1,0 +1,32 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "meta-still (full pipeline)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "meta_still",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false
+    },
+    {
+      "name": "Mapper only",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "meta_still.mapper",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false
+    },
+    {
+      "name": "Stills only (one video)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "meta_still.stills",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false
+    }
+  ]
+}
