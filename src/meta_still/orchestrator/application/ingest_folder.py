@@ -18,6 +18,7 @@ from meta_still.core.domain.tree import iter_files
 from meta_still.core.interfaces.paths import label_for
 from meta_still.mapper.application.scan_folder import ScanFolder
 from meta_still.mapper.domain.renderer import render_report
+from meta_still.orchestrator.domain.planning import PlannedClip, plan_destinations
 from meta_still.stills.application.generate_stills import GenerateStills, StillsRequest
 
 
@@ -77,15 +78,16 @@ class IngestFolder:
         self.progress(f"Mapped {report.tree.total_files} files -> {map_path.name}")
 
         videos = [
-            (parents, file)
+            (parents, file.name)
             for parents, file in iter_files(report.tree)
             if is_video(file.name)
         ]
         self.progress(f"{len(videos)} video files to process")
 
+        plan = plan_destinations(videos, request.output_dir)
         outcomes = [
-            self._process(request, position, len(videos), parents, file.name)
-            for position, (parents, file) in enumerate(videos, start=1)
+            self._process(request, position, len(plan), clip)
+            for position, clip in enumerate(plan, start=1)
         ]
         return IngestResult(map_path=map_path, outcomes=outcomes)
 
@@ -94,17 +96,11 @@ class IngestFolder:
         request: IngestRequest,
         position: int,
         total: int,
-        parents: tuple[str, ...],
-        filename: str,
+        clip: PlannedClip,
     ) -> ClipOutcome:
-        source = request.root.joinpath(*parents, filename)
-        # Every component is sanitised, not just the clip's own folder: a
-        # source folder can carry a trailing space just as easily as a file.
-        destination = request.output_dir.joinpath(
-            *(safe_name(part) for part in parents),
-            safe_name(Path(filename).stem),
-        )
-        marker = f"[{position:>4}/{total}] {filename}"
+        source = request.root.joinpath(*clip.parents, clip.filename)
+        destination = clip.destination
+        marker = f"[{position:>4}/{total}] {clip.filename}"
 
         if not request.force and self._already_done(destination, request.stills_per_clip):
             self.progress(f"{marker}  - already done, skipped")

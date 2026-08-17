@@ -67,11 +67,13 @@ def test_mirrors_the_tree_and_gives_each_clip_its_own_folder(tmp_path: Path) -> 
 
     result = run(source, out, FakeFrameSource())
 
-    clip_out = out / "CAMERAS" / "2026_04_27" / "FX3_B" / "M4ROOT" / "CLIP"
+    # M4ROOT/CLIP is card plumbing and is collapsed away; FX3_B is not.
+    clip_out = out / "CAMERAS" / "2026_04_27" / "FX3_B"
     assert sorted(p.name for p in clip_out.iterdir()) == [
         "20260427_B3301",
         "20260427_B3302",
     ]
+    assert not (out / "CAMERAS" / "2026_04_27" / "FX3_B" / "M4ROOT").exists()
     assert len(list((clip_out / "20260427_B3301").glob("*.png"))) == 5
     assert len(result.done) == 2
 
